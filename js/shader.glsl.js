@@ -149,7 +149,7 @@ vec3 marchWaves( vec3 ro, vec3 rd ) {
 float moon( vec3 rd ) {
 	
 	float a = dot( rd, n(vec3(-.8,.1,0.)) );
-	return .015/sqrt(1.-a) + .1*exp(-abs(rd.y)*10.);
+	return .015/sqrt(1.-a) + .1*exp(-abs(rd.y)*10.) + hash(rd.y+hash(rd.z))*1e-2;
 }
 
 void mainImage(
