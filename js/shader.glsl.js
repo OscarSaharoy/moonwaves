@@ -7,6 +7,7 @@ export default `
 #define t uTime
 #define pi 3.14159265359
 #define n normalize
+#define failure vec3(-1)
 
 uniform float uTime;
 uniform vec2 uResolution;
@@ -115,46 +116,55 @@ vec2 dwaves( vec2 p ) {
 	return dr;
 }
 
+vec3 intPlane( vec3 ro, vec3 rd, vec4 plane ) {
+
+	float t = ( dot(ro, plane.xyz) - plane.w )
+		/ -dot(rd, plane.xyz);
+
+	if( t < 0. ) return failure;
+	return ro + t * rd;
+}
+
+
+vec3 marchWaves( vec3 ro, vec3 rd ) {
+
+	vec4 surfPlane = vec4(0,1,0,0);
+	if( intPlane( ro, rd, surfPlane ) == failure )
+		return failure;
+
+	vec3 p = ro;
+
+	for( float i = 0.; i<100.; ++i ) {
+
+		float d = p.y - waves(p.xz);
+
+		if( d < .01 ) return p;
+
+		p += d*rd;
+	}
+
+	return p;
+}
+
 void mainImage(
 		out vec4 fragColor, in vec2 fragCoord ) {
 
 	vec3 light = vec3(0); 
 
-	vec2 p = 
-		( fragCoord - uResolution * .5 ) 
-		/ uResolution.x * 2.;
+	vec2 p = ( fragCoord - uResolution * .5 ) 
+		/ min(uResolution.x, uResolution.y) * 2.;
 
-	/*
-	float s = dot(p,vec2(.6,.8)) * 10.;
-	float level = 0.1 * wave( s );
-	vec2 dlevel = dwave(s) * vec2(.6,.8);
+	vec3 rd = n(vec3( p.x, p.y, -1. ));
+	vec3 ro = vec3( 0., 2., 0. );
 
-	vec3 ddx = vec3( 1., 0., dlevel.x );
-	vec3 ddy = vec3( 0., 1., dlevel.y );
-	vec3 normal = cross( ddx, ddy );
-	
-	light += dot( n(normal), vec3(1./sqrt(3.)) );
-	*/
-
-	//light = vec3( waves(p * 10.) );
-	vec2 ddxddy = dwaves(p * 10. * vec2(1.,1.));
-
-	vec3 ddx = vec3( 1., 0., ddxddy.x );
-	vec3 ddy = vec3( 0., 1., ddxddy.y );
-	vec3 normal = n(cross( ddx, ddy ));
-	
-	light += dot( n(normal), vec3(1./sqrt(3.)) );
+	vec3 wavesPos = marchWaves( ro, rd );
+	light += wavesPos;
 
 	fragColor = vec4( light, 1. );
 }
 
 
 void main() {
-
-    float minDimension = min( uResolution.x, uResolution.y );
-    float aspect = uResolution.x / uResolution.y;
-    vec2 centredFragCoord = 2. * gl_FragCoord.xy - uResolution.xy;
-    vec2 screenPos = centredFragCoord / minDimension;
 
     mainImage( gl_FragColor, gl_FragCoord.xy );
 }
