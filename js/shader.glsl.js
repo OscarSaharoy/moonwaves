@@ -69,14 +69,15 @@ float waves( vec2 p ) {
 	float r = 0.;
 
 	float f = 1.;
-	float a = .2;
+	float a = .1;
 
-	for( float i = 0.; i<10.; ++i ) {
+	for( float i = 0.; i<4.; ++i ) {
 
 		float o = hash(i) * 10.;
 		vec2 d = n(vec2( hash(i+.1), hash(i+.2)*.2 ));
+		float s = dot(d,p) * f + o - f*t;
 
-		r += wave( dot(d,p) * f + o ) * a;
+		r += wave( s ) * a;
 
 		float m = 1.05;
 
@@ -92,16 +93,16 @@ vec2 dwaves( vec2 p ) {
 	vec2 dr = vec2(0);
 
 	float f = 1.;
-	float a = .2;
+	float a = .1;
 
 	// r = sum_i wave(s_i)
 
-	for( float i = 0.; i<10.; ++i ) {
+	for( float i = 0.; i<4.; ++i ) {
 
 		float o = hash(i) * 10.;
 		vec2 d = n(vec2( hash(i+.1), hash(i+.2)*.2 ));
 
-		float s = dot(d,p) * f + o;
+		float s = dot(d,p) * f + o - f*t;
 
 		// d(wavei + waves) = dwavei + dwaves
 
@@ -125,7 +126,6 @@ vec3 intPlane( vec3 ro, vec3 rd, vec4 plane ) {
 	return ro + t * rd;
 }
 
-
 vec3 marchWaves( vec3 ro, vec3 rd ) {
 
 	vec4 surfPlane = vec4(0,1,0,0);
@@ -146,6 +146,12 @@ vec3 marchWaves( vec3 ro, vec3 rd ) {
 	return p;
 }
 
+float moon( vec3 rd ) {
+	
+	float a = dot( rd, n(vec3(-.8,.1,0.)) );
+	return .015/sqrt(1.-a) + .1*exp(-abs(rd.y)*10.);
+}
+
 void mainImage(
 		out vec4 fragColor, in vec2 fragCoord ) {
 
@@ -154,11 +160,27 @@ void mainImage(
 	vec2 p = ( fragCoord - uResolution * .5 ) 
 		/ min(uResolution.x, uResolution.y) * 2.;
 
-	vec3 rd = n(vec3( p.x, p.y, -1. ));
-	vec3 ro = vec3( 0., 2., 0. );
+	vec3 rd = n(vec3( p.x, p.y, -2. ));
+	rd = rd.zyx;
+	vec3 ro = vec3( 0., 1., 0. );
 
 	vec3 wavesPos = marchWaves( ro, rd );
-	light += wavesPos;
+
+	if( wavesPos != failure ) {
+
+		vec2 ddxddz = dwaves( 2.*wavesPos.xz );
+
+		vec3 ddx = vec3( 1., ddxddz.x, 0. );
+		vec3 ddz = vec3( 0., ddxddz.y, 1. );
+		vec3 normal = n(cross( ddz, ddx ));
+
+		vec3 refl = rd - 2.*normal * dot(rd,normal);
+		light += moon(refl) * exp( -.02*length(wavesPos) );
+	}
+	else {
+
+		light += moon(rd);
+	}
 
 	fragColor = vec4( light, 1. );
 }

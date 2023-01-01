@@ -57,7 +57,7 @@ function render( time ) {
     requestAnimationFrame(render);
 }
 
-//requestAnimationFrame(render);
+requestAnimationFrame(render);
 
 
 function download() {
