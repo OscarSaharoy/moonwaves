@@ -168,7 +168,7 @@ void mainImage(
 
 	if( wavesPos != failure ) {
 
-		vec2 ddxddz = dwaves( 2.*wavesPos.xz );
+		vec2 ddxddz = dwaves( wavesPos.xz );
 
 		vec3 ddx = vec3( 1., ddxddz.x, 0. );
 		vec3 ddz = vec3( 0., ddxddz.y, 1. );
