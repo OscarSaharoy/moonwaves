@@ -65,17 +65,17 @@ float dwave( float x ) {
 
 float waves( vec2 p ) {
 
-	float r = 1.;
+	float r = 0.;
 
 	float f = 1.;
-	float a = .1;
+	float a = .2;
 
 	for( float i = 0.; i<10.; ++i ) {
 
 		float o = hash(i) * 10.;
-		vec2 d = n(vec2( hash(i+.1), hash(i+.2) ));
+		vec2 d = n(vec2( hash(i+.1), hash(i+.2)*.2 ));
 
-		r *= wave( dot(d,p) * f + o + t*hash(i) ) + .5;
+		r += wave( dot(d,p) * f + o ) * a;
 
 		float m = 1.05;
 
@@ -88,35 +88,23 @@ float waves( vec2 p ) {
 
 vec2 dwaves( vec2 p ) {
 
-	float r = 1.;
 	vec2 dr = vec2(0);
 
 	float f = 1.;
-	float a = .1;
+	float a = .2;
 
-	// r = prod_i wave(s_i)
+	// r = sum_i wave(s_i)
 
-	float i = 0.;
-	float o = hash(i) * 10.;
-	vec2 d = n(vec2( hash(i+.1), hash(i+.2) ));
-	float s = dot(d,p) * f + o;
-
-	r *= wave( s ) + .5;
-	dr = dwave(s) * d * f;
-
-	for( ; i<10.; ++i ) {
+	for( float i = 0.; i<10.; ++i ) {
 
 		float o = hash(i) * 10.;
-		vec2 d = n(vec2( hash(i+.1), hash(i+.2) ));
+		vec2 d = n(vec2( hash(i+.1), hash(i+.2)*.2 ));
 
-		float s = dot(d,p) * f + o - t*(.5+hash(o));
-		float wavei = wave(s) + .5;
+		float s = dot(d,p) * f + o;
 
-		// d(fg) = fg' + f'g
-		// d(wavei waves) = dwavei waves + wavei dwaves
+		// d(wavei + waves) = dwavei + dwaves
 
-		dr = dwave(s) * d * f * r + wavei * dr;
-		r *= wavei;
+		dr += dwave(s) * a * f * d;
 
 		float m = 1.05;
 
